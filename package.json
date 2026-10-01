@@ -1,35 +1,19 @@
 {
   "name": "lighthigh",
-  "version": "0.1.0",
-  "description": "Highlight any node/area in the document",
+  "version": "1.0.0",
+  "description": "Lexer-agnostic syntax highlighting with the CSS Custom Highlight API",
   "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "dependencies": {
-    "require-stub": "~0.0.14",
-    "mucss": "*"
-  },
-  "devDependencies": {},
+  "files": ["index.js", "index.css", "README.md"],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
+  "keywords": ["syntax", "highlight", "css-custom-highlight", "lexer", "gpu"],
+  "author": "dfcreative",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git://github.com/dfcreative/lighthigh.git"
   },
-  "keywords": [
-    "highlight",
-    "select",
-    "active",
-    "transformBox",
-    "css",
-    "jquery"
-  ],
-  "author": "dfcreative",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/dfcreative/lighthigh/issues"
-  },
+  "bugs": {"url": "https://github.com/dfcreative/lighthigh/issues"},
   "homepage": "https://github.com/dfcreative/lighthigh"
 }

@@ -1,169 +1,159 @@
-module.exports = Lighthigh;
+'use strict';
 
-var css = require('mucss');
-
-
-/** @True {string} Append this name to the `el` class list.  */
-var name = 'lighthigh';
-
-var doc = document, win = window, root = document.documentElement;
-
+var nextId = 0;
 
 /**
- * Create a highlighter.
+ * Paint lexer output with the CSS Custom Highlight API.
  *
- * @param   {Element}   el   An element to take as a highlight. It can contain anything inside.
+ * Lighthigh deliberately does not parse a language. Pass it any lexer that
+ * returns offset based tokens and it becomes the small rendering half of a
+ * syntax highlighter.
  */
+class Lighthigh {
+	constructor(options) {
+		options = options || {};
+		this.document = options.document || globalThis.document;
+		this.registry = options.registry || (globalThis.CSS && CSS.highlights);
+		this.Highlight = options.Highlight || globalThis.Highlight;
+		this.prefix = options.prefix || 'lighthigh-' + (++nextId);
+		this.palette = Object.assign({}, defaultPalette, options.theme);
+		this.names = new Set();
+		this.style = null;
 
-function Lighthigh(el){
-	this.el = el || document.createElement('div');
+		if (!this.document || !this.registry || !this.Highlight) {
+			throw new Error('Lighthigh requires the CSS Custom Highlight API');
+		}
+	}
 
-	this.el.setAttribute('hidden', true);
-	this.el.classList.add(name);
-
-	this.el.lighthigh = this;
-}
-
-var proto = Lighthigh.prototype;
-
-
-/**
- * Fade in and move highlight to the target.
- *
- * @param    {(Array|Node)}   target   A target area or element to highlight.
- * @return   {Lighthigh}   Chain of calls.
- */
-
-proto['to'] = function (target){
-	//get target rectangle
-	var rect = getRect(target);
-
-	if (target instanceof Element) {
-		//copy target position
-		var style = win.getComputedStyle(target);
-		if (style.position === 'fixed') {
-			if (!this.el.classList.contains(name + '-fixed')) {
-				this.el.classList.add(name + '-fixed');
-			}
-		} else if (this.el.classList.contains(name + '-fixed')) {
-			this.el.classList.remove(name + '-fixed');
+	/** Highlight an element without replacing or wrapping its text nodes. */
+	highlight(element, lexer, language) {
+		if (!element || typeof lexer !== 'function') {
+			throw new TypeError('highlight(element, lexer) expects an element and a lexer function');
 		}
 
-		//↓↓↓
-		//TODO: calc absolute offset position
-		//TODO: place to the body with calc offset position
-		//TODO: calc target element offset position
-		//TODO: move to the target element offset position
-		//TODO: remove from DOM when anim ends
-		//TODO: place to the target parent
-		//TODO: clone target offset position within parent (make dependent on target holder position)
-		//TODO: unhide from the DOM
-		//↑↑↑
+		this.clear();
+		var text = element.textContent || '';
+		var output = lexer(text, language);
+		var tokens = normalizeTokens(output, text.length);
+		var textNodes = collectTextNodes(element, this.document);
+		var grouped = new Map();
 
-		//place to the target parent
-		//because parent can be displaced, so highlight should be positioned similarly to the target
-		var parent = target.parentNode instanceof Element && target.parentNode !== root ? target.parentNode : document.body;
-		if (this.el.parentNode !== parent) parent.appendChild(this.el);
+		tokens.forEach((token) => {
+			var range = rangeForOffsets(textNodes, token.start, token.end, this.document);
+			if (!range) return;
+			var type = safeName(token.type);
+			if (!grouped.has(type)) grouped.set(type, []);
+			grouped.get(type).push(range);
+		});
+
+		grouped.forEach((ranges, type) => {
+			var name = this.prefix + '-' + type;
+			this.registry.set(name, new this.Highlight(...ranges));
+			this.names.add(name);
+		});
+
+		this._setTheme(grouped.keys());
+		return this;
 	}
 
-	//unhide element
-	if (this.el.hasAttribute('hidden')) {
-		this.el.removeAttribute('hidden');
-		//TODO: make soft fade-in
+	clear() {
+		this.names.forEach((name) => this.registry.delete(name));
+		this.names.clear();
+		if (this.style) this.style.remove();
+		this.style = null;
+		return this;
 	}
 
-	//set new position
-	this.moveTo(rect);
-
-	return this;
-};
-
-
-/**
- * Return bounding client rectangle of any target passed.
- *
- * @param    {(Node|Array|window|document|Objcet)}   target   A target.
- * @return   {Array}   Rectangle array: `[left,top,right,bottom]`.
- */
-
-function getRect(target){
-	var rect;
-
-	if (target instanceof Node && target !== doc){
-		var oRect = css.offsets(target);
-		rect = [oRect.left, oRect.top, oRect.right, oRect.bottom];
+	dispose() {
+		return this.clear();
 	}
 
-	else if (target === win){
-		rect = [0, 0, win.innerWidth,  win.innerHeight];
+	_setTheme(types) {
+		var css = [];
+		for (var type of types) {
+			var color = inferColor(type, this.palette);
+			css.push('::highlight(' + this.prefix + '-' + type + ') { color: ' + color + '; }');
+		}
+		if (!css.length) return;
+		this.style = this.document.createElement('style');
+		this.style.dataset.lighthigh = this.prefix;
+		this.style.textContent = css.join('\n');
+		(this.document.head || this.document.documentElement).appendChild(this.style);
 	}
-
-	else if (target === doc){
-		rect = [0, 0, root.offsetWidth, root.offsetHeight];
-	}
-
-	//object like {top:N, left:N, width:N, height:N}
-	else if (target.top){
-		rect = [target.left, target.top, target.right || (target.left + target.width), target.bottom || (target.top + target.height) ];
-	}
-
-	else if (target instanceof Array){
-		rect = target;
-	}
-
-	else {
-		rect = [0,0,0,0];
-	}
-
-	return rect;
 }
 
+function normalizeTokens(output, sourceLength) {
+	if (output && output.tokens) output = output.tokens;
+	if (!output || typeof output[Symbol.iterator] !== 'function') {
+		throw new TypeError('The lexer must return an iterable of tokens');
+	}
 
-/**
- * Fade out & hide.
- *
- * @return   {Lighthigh}   Chain of calls.
- */
+	return Array.from(output, function (token) {
+		var start = number(token.start, token.from, token.offset, token[0]);
+		var end = number(token.end, token.to, token[1]);
+		if (end === undefined && start !== undefined && token.length !== undefined) end = start + token.length;
+		var type = token.type || token.kind || token.scope || token.token || token[2];
+		if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end <= start || end > sourceLength || !type) {
+			throw new TypeError('Invalid token: expected {start, end, type} within the source');
+		}
+		return { start: start, end: end, type: String(type) };
+	}).sort(function (a, b) { return a.start - b.start || a.end - b.end; });
+}
 
-proto['off'] = function (){
-	//TODO: make soft fade-out
-	this.el.setAttribute('hidden', true);
+function number() {
+	for (var i = 0; i < arguments.length; i++) if (arguments[i] !== undefined) return arguments[i];
+}
 
-	return this;
+function collectTextNodes(root, document) {
+	var nodes = [];
+	var walker = document.createTreeWalker(root, 4); // NodeFilter.SHOW_TEXT
+	var offset = 0;
+	var node;
+	while ((node = walker.nextNode())) {
+		nodes.push({ node: node, start: offset, end: offset + node.data.length });
+		offset += node.data.length;
+	}
+	return nodes;
+}
+
+function rangeForOffsets(nodes, start, end, document) {
+	var first = nodes.find((entry) => start >= entry.start && start <= entry.end);
+	var last = nodes.find((entry) => end > entry.start && end <= entry.end);
+	if (!first || !last) return null;
+	var range = document.createRange();
+	range.setStart(first.node, start - first.start);
+	range.setEnd(last.node, end - last.start);
+	return range;
+}
+
+function safeName(type) {
+	return type.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'plain';
+}
+
+var defaultPalette = {
+	comment: '#6a737d',
+	keyword: '#d73a49',
+	operator: '#d73a49',
+	string: '#032f62',
+	number: '#005cc5',
+	constant: '#005cc5',
+	function: '#6f42c1',
+	type: '#22863a',
+	variable: '#e36209',
+	property: '#005cc5',
+	tag: '#22863a',
+	attribute: '#6f42c1'
 };
 
+function inferColor(type, palette) {
+	var lower = type.toLowerCase();
+	if (palette[lower]) return palette[lower];
+	var category = Object.keys(palette).find((key) => lower.includes(key));
+	if (category) return palette[category];
+	var hash = Array.from(lower).reduce((value, character) => ((value * 31) + character.charCodeAt(0)) >>> 0, 0);
+	return 'hsl(' + (hash % 360) + ' 55% 38%)';
+}
 
-/** @True {string} CSS transform property name. */
-var transform = '-webkit-transform';
-
-
-/**
- * Move highlighter to the rectangle.
- *
- * @param    {Array}   rect   4-dimension array [left,top,right,bottom].
- * @return   {Lighthigh}   Chain of calls.
- *
- */
-
-proto.moveTo = function (rect) {
-	var paddings = css.paddings(this.el);
-
-	css(this.el, {
-		'transform': 'translate3d(' + (rect[0] - paddings.left) + 'px, ' + (rect[1] - paddings.top) + 'px, 0)',
-		'width': (rect[2] - rect[0]) + 'px',
-		'height': (rect[3] - rect[1]) + 'px'
-	});
-
-	return this;
-};
-
-
-/**
- * Mimic target element position, if such.
- *
- * @return   {Lighthigh}   Chaining.
- */
-
-proto.update = function () {
-	//TODO
-};
+module.exports = Lighthigh;
+module.exports.normalizeTokens = normalizeTokens;
+module.exports.inferColor = inferColor;
