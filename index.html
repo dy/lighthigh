@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lighthigh – syntax highlighting with no markup</title>
+  <meta name="description" content="Syntax highlighting with the CSS Custom Highlight API: no span around each token. Works with Prism, Shiki, Highlight.js, Lezer or your own lexer.">
+  <link rel="canonical" href="https://dy.github.io/lighthigh/">
+  <meta name="theme-color" content="#fdfdff">
+  <link rel="icon" href="site/favicon.ico" sizes="32x32">
+  <link rel="icon" href="site/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="site/apple-touch-icon.png">
+  <link rel="manifest" href="site/manifest.webmanifest">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Lighthigh">
+  <meta property="og:url" content="https://dy.github.io/lighthigh/">
+  <meta property="og:title" content="Lighthigh – syntax highlighting with no markup">
+  <meta property="og:description" content="Syntax highlighting with the CSS Custom Highlight API: no span around each token. Works with Prism, Shiki, Highlight.js, Lezer or your own lexer.">
+  <meta property="og:image" content="https://dy.github.io/lighthigh/site/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="lighthigh: a little highlight with no markup.">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareSourceCode", "name": "Lighthigh", "description": "Syntax highlighting with the CSS Custom Highlight API: no span around each token. Works with Prism, Shiki, Highlight.js, Lezer or your own lexer.", "url": "https://dy.github.io/lighthigh/", "codeRepository": "https://github.com/dy/lighthigh", "programmingLanguage": "JavaScript", "runtimePlatform": "Web browser", "license": "https://opensource.org/license/mit", "author": {"@type": "Person", "name": "Dmitry Iv.", "url": "https://github.com/dy"}}</script>
+  <link rel="preload" href="site/fonts/dm-sans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="site/style.css">
+  <script src="site/vendor/auto.min.js" defer></script>
+  <script type="module" src="site/demo.js"></script>
+</head>
+<body>
+  <svg class="icon-defs" aria-hidden="true">
+    <symbol id="copy-icon" viewBox="0 0 20 20"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="script-icon" viewBox="0 0 20 20"><path d="M7 6 3 10l4 4M13 6l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="prism-icon" viewBox="0 0 200 170"><path d="M100 0 0 170h200z" fill="currentColor"/></symbol>
+    <symbol id="shiki-icon" viewBox="0 0 266 266"><circle cx="219.5" cy="46.5" r="46.5" fill="#CB7676"/><rect y="48" width="266" height="65" fill="#4B9978"/><path d="M109.463 144.426C109.012 138.792 106.899 134.397 103.124 131.242C99.4052 128.086 93.7426 126.509 86.1361 126.509C81.2905 126.509 77.3182 127.1 74.2192 128.284C71.1766 129.411 68.9228 130.96 67.4579 132.932C65.9929 134.904 65.2323 137.158 65.1759 139.693C65.0632 141.778 65.4295 143.666 66.2747 145.356C67.1762 146.99 68.5848 148.483 70.5005 149.835C72.4162 151.131 74.8672 152.315 77.8535 153.385C80.8397 154.456 84.3894 155.414 88.5026 156.259L102.701 159.301C112.28 161.33 120.478 164.006 127.296 167.33C134.113 170.655 139.692 174.571 144.03 179.078C148.369 183.529 151.552 188.544 153.58 194.122C155.665 199.7 156.736 205.785 156.792 212.378C156.736 223.759 153.89 233.394 148.256 241.283C142.621 249.171 134.564 255.171 124.084 259.285C113.66 263.398 101.124 265.454 86.4742 265.454C71.4302 265.454 58.3019 263.229 47.0893 258.778C35.9331 254.326 27.2561 247.48 21.0582 238.24C14.9166 228.943 11.8177 217.054 11.7613 202.574H56.3862C56.6679 207.87 57.992 212.321 60.3585 215.928C62.725 219.534 66.0493 222.266 70.3315 224.126C74.67 225.985 79.8255 226.915 85.798 226.915C90.8127 226.915 95.0104 226.295 98.391 225.055C101.772 223.816 104.335 222.097 106.082 219.9C107.829 217.702 108.73 215.195 108.787 212.378C108.73 209.73 107.857 207.419 106.167 205.447C104.533 203.419 101.828 201.616 98.053 200.038C94.2779 198.404 89.1787 196.883 82.7554 195.474L65.514 191.756C50.1883 188.431 38.1024 182.881 29.2563 175.106C20.4666 167.274 16.0999 156.597 16.1562 143.074C16.0999 132.087 19.0298 122.48 24.946 114.254C30.9185 105.971 39.1729 99.5197 49.7094 94.8995C60.3021 90.2793 72.4444 87.9691 86.1361 87.9691C100.11 87.9691 112.195 90.3074 122.394 94.984C132.592 99.6606 140.452 106.253 145.974 114.761C151.552 123.213 154.369 133.101 154.426 144.426H109.463Z" fill="#83D0DA"/><rect x="217" width="266" height="65" transform="rotate(90 217 0)" fill="#E6CC78"/></symbol>
+    <symbol id="hljs-icon" viewBox="0 0 20 20"><path d="M4 4v12M9 4v12M4 10h5M13 8v8M13 16h3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="lezer-icon" viewBox="0 0 20 20"><path d="M10 3 4 7v6l6 4 6-4V7l-6-4Zm0 4v10M4 7l6 4 6-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="gpu-icon" viewBox="0 0 20 20"><g fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="10" height="10" rx="1.5"/><path d="M8 2v3M12 2v3M8 15v3M12 15v3M2 8h3M2 12h3M15 8h3M15 12h3"/></g></symbol>
+  </svg>
+  <a class="skip-link" href="#source">Skip to demo</a>
+  <header class="site-nav canvas">
+    <a class="brand" href="#" aria-label="Lighthigh home"><svg viewBox="0 0 32 32" width="24" height="24" aria-hidden="true"><path d="M7.5 8h14M7.5 24h10"/><path class="lit" d="M7.5 16h17"/></svg></a>
+    <nav aria-label="Project"><a href="https://www.npmjs.com/package/lighthigh" target="_blank" rel="noopener">npm</a><a href="https://github.com/dy/lighthigh" target="_blank" rel="noopener">GitHub</a></nav>
+  </header>
+  <main id="main" class="canvas">
+    <section class="intro" aria-labelledby="title">
+      <h1 id="title" data-title>lighthigh</h1>
+      <p>A little highlight with no markup.</p>
+    </section>
+
+    <section class="demo" data-demo data-live data-palette="github-light" aria-label="Editable syntax highlighting demo">
+      <div class="demo-toolbar">
+        <label><span class="sr-only">Example language</span><select data-language><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option><option value="jsx">JSX</option><option value="tsx">TSX</option><option value="css">CSS</option><option value="html">HTML</option><option value="json">JSON</option><option value="python">Python</option><option value="bash">Bash</option><option value="sql">SQL</option><option value="go">Go</option><option value="rust">Rust</option><option value="markdown">Markdown</option><option value="yaml">YAML</option></select></label>
+        <span class="theme-name" data-theme-name aria-hidden="true">GitHub Light</span>
+        <fieldset class="swatches" data-theme><legend class="sr-only">Theme</legend></fieldset>
+      </div>
+      <div class="code-editor">
+        <pre aria-hidden="true"><code id="live-code" data-output>import highlight from 'lighthigh'
+
+const code = document.querySelector('code')
+
+highlight(code, lexer, {
+  theme: {
+    keyword: '#d73a49',
+    string: '#032f62'
+  }
+})</code></pre>
+        <textarea id="source" data-source aria-label="Code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off">import highlight from 'lighthigh'
+
+const code = document.querySelector('code')
+
+highlight(code, lexer, {
+  theme: {
+    keyword: '#d73a49',
+    string: '#032f62'
+  }
+})</textarea>
+      </div>
+      <p class="demo-status" data-status role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="features" aria-label="Features">
+      <article><h2>Text stays text.</h2><p>No span around each token. Selection, undo and your framework keep the original text node.</p></article>
+      <article><h2>Any lexer.</h2><p>Prism, Shiki, Highlight.js, Lezer, or anything that returns <code>{ start, end, type }</code>.</p></article>
+      <article><h2>18 palettes.</h2><p>GitHub to Catppuccin, Shiki theme colors, or your own.</p></article>
+    </section>
+
+    <section class="guide" id="get-started" aria-labelledby="start-title">
+      <h2 id="start-title">Add a light high.</h2>
+      <div class="setup">
+        <div class="tabs" role="radiogroup" aria-label="Setup">
+          <label><input type="radio" name="lexer" value="script" checked><svg aria-hidden="true"><use href="#script-icon"/></svg>Script</label>
+          <label><input type="radio" name="lexer" value="prism"><svg aria-hidden="true"><use href="#prism-icon"/></svg>Prism</label>
+          <label><input type="radio" name="lexer" value="shiki"><svg aria-hidden="true"><use href="#shiki-icon"/></svg>Shiki</label>
+          <label><input type="radio" name="lexer" value="hljs"><svg aria-hidden="true"><use href="#hljs-icon"/></svg>Highlight.js</label>
+          <label><input type="radio" name="lexer" value="lezer"><svg aria-hidden="true"><use href="#lezer-icon"/></svg>Lezer</label>
+          <label><input type="radio" name="lexer" value="gpu"><svg aria-hidden="true"><use href="#gpu-icon"/></svg>gpu-lexer</label>
+        </div>
+        <div class="snippet" data-panel="script"><div class="code-block"><pre tabindex="0"><code id="cdn-code" data-highlight data-follow-theme data-syntax="html">&lt;pre&gt;&lt;code data-lighthigh="javascript"&gt;
+const answer = 42
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;script defer src="https://cdn.jsdelivr.net/npm/lighthigh@1"
+  data-theme="github-light"&gt;&lt;/script&gt;</code></pre><button class="copy" type="button" data-copy data-copy-icon data-copy-target="#cdn-code" aria-label="Copy script setup"><svg aria-hidden="true"><use href="#copy-icon"/></svg></button></div></div>
+        <div class="snippet" data-panel="prism"><div class="install"><code id="prism-install">npm i lighthigh prismjs</code><button class="copy" type="button" data-copy data-copy-icon data-copy-target="#prism-install" aria-label="Copy install command"><svg aria-hidden="true"><use href="#copy-icon"/></svg></button></div><div class="code-block"><pre tabindex="0"><code id="prism-code" data-highlight>import highlight from 'lighthigh'
+import { prism } from 'lighthigh/adapters.js'
+import Prism from 'prismjs'
+
+const code = document.querySelector('code')
+
+highlight(code, source =&gt;
+  prism(Prism.tokenize(source, Prism.languages.js))
+)</code></pre><button class="copy" type="button" data-copy data-copy-icon data-copy-target="#prism-code" aria-label="Copy Prism example"><svg aria-hidden="true"><use href="#copy-icon"/></svg></button></div></div>
+        <div class="snippet" data-panel="shiki"><div class="install"><code id="shiki-install">npm i lighthigh shiki</code><button class="copy" type="button" data-copy data-copy-icon data-copy-target="#shiki-install" aria-label="Copy install command"><svg aria-hidden="true"><use href="#copy-icon"/></svg></button></div><div class="code-block"><pre tabindex="0"><code id="shiki-code" data-highlight>import highlight from 'lighthigh'
+import { shiki } from 'lighthigh/adapters.js'
+import { codeToTokens } from 'shiki'
+
+const code = document.querySelector('code')
+const result = await codeToTokens(code.textContent, {
+  lang: 'javascript', theme: 'github-light'
+})
+const { tokens, theme } = shiki(result)
+highlight(code, tokens, { theme })</code></pre><button class="copy" type="button" data-copy data-copy-icon data-copy-target="#shiki-code" aria-label="Copy Shiki example"><svg aria-hidden="true"><use href="#copy-icon"/></svg></button></div></div>
+        <div class="snippet" data-panel="hljs"><div class="install"><code id="hljs-install">npm i lighthigh highlight.js</code><button class="copy" type="button" data-copy data-copy-icon data-copy-target="#hljs-install" aria-label="Copy install command"><svg aria-hidden="true"><use href="#copy-icon"/></svg></button></div><div class="code-block"><pre tabindex="0"><code id="hljs-code" data-highlight>import highlight from 'lighthigh'
+import { hljs } from 'lighthigh/adapters.js'
+import hljsCore from 'highlight.js/lib/core'
+import javascript from 'highlight.js/lib/languages/javascript'
+
+hljsCore.registerLanguage('javascript', javascript)
+const code = document.querySelector('code')
+
+highlight(code, source =&gt;
+  hljs(hljsCore.highlight(source, { language: 'javascript' }))
+)</code></pre><button class="copy" type="button" data-copy data-copy-icon data-copy-target="#hljs-code" aria-label="Copy Highlight.js example"><svg aria-hidden="true"><use href="#copy-icon"/></svg></button></div></div>
+        <div class="snippet" data-panel="lezer"><div class="install"><code id="lezer-install">npm i lighthigh @lezer/javascript @lezer/highlight</code><button class="copy" type="button" data-copy data-copy-icon data-copy-target="#lezer-install" aria-label="Copy install command"><svg aria-hidden="true"><use href="#copy-icon"/></svg></button></div><div class="code-block"><pre tabindex="0"><code id="lezer-code" data-highlight>import highlight from 'lighthigh'
+import { lezer } from 'lighthigh/adapters.js'
+import { parser } from '@lezer/javascript'
+import { highlightTree, classHighlighter } from '@lezer/highlight'
+
+const code = document.querySelector('code')
+
+highlight(code, source =&gt;
+  lezer(parser.parse(source), highlightTree, classHighlighter)
+)</code></pre><button class="copy" type="button" data-copy data-copy-icon data-copy-target="#lezer-code" aria-label="Copy Lezer example"><svg aria-hidden="true"><use href="#copy-icon"/></svg></button></div></div>
+        <div class="snippet" data-panel="gpu"><div class="install"><code id="gpu-install">npm i lighthigh gpu-lexer</code><button class="copy" type="button" data-copy data-copy-icon data-copy-target="#gpu-install" aria-label="Copy install command"><svg aria-hidden="true"><use href="#copy-icon"/></svg></button></div><div class="code-block"><pre tabindex="0"><code id="gpu-code" data-highlight>import highlight from 'lighthigh'
+import { parse } from 'gpu-lexer'
+
+const code = document.querySelector('code')
+const tokens = await parse(code.textContent)
+highlight(code, tokens)</code></pre><button class="copy" type="button" data-copy data-copy-icon data-copy-target="#gpu-code" aria-label="Copy gpu-lexer example"><svg aria-hidden="true"><use href="#copy-icon"/></svg></button></div></div>
+      </div>
+    </section>
+
+    <section class="questions" aria-labelledby="questions-title">
+      <h2 id="questions-title">FAQ</h2>
+      <article><h3>How light?</h3><p>The renderer is 1.4 KB gzipped, no dependencies. The script with 14 languages and 18 palettes is 24 KB.</p></article>
+      <article><h3>Can I keep my themes?</h3><p>Shiki colors work as-is. For others, pass a type → color map. Colors only: no bold or italics.</p></article>
+      <article><h3>Which browsers?</h3><p><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/::highlight#browser_compatibility" target="_blank" rel="noopener">Chrome and Edge 105+, Safari 17.2+, Firefox 140+</a>. Older ones show plain text.</p></article>
+      <article><h3>React, Vue, Sprae?</h3><p>Call <code>highlight(el, tokens)</code> after render. It returns a cleanup for unmount.</p></article>
+      <article><h3>Build time or a Worker?</h3><p>Tokenize there, send <code>[start, end, type]</code> tuples, paint in the browser.</p></article>
+    </section>
+  </main>
+  <footer class="site-footer canvas"><a href="https://opensource.org/license/mit" target="_blank" rel="noopener">MIT</a><a class="om" href="https://github.com/krishnized/license" target="_blank" rel="noopener" aria-label="Krishnized license">ॐ</a></footer>
+  <p class="sr-only" id="copy-status" role="status" aria-live="polite"></p>
+</body>
+</html>
