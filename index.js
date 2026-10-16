@@ -1,84 +1,55 @@
 'use strict';
 
 var nextId = 0;
+var active = new WeakMap();
 
-/**
- * Paint lexer output with the CSS Custom Highlight API.
- *
- * Lighthigh deliberately does not parse a language. Pass it any lexer that
- * returns offset based tokens and it becomes the small rendering half of a
- * syntax highlighter.
- */
-class Lighthigh {
-	constructor(options) {
-		options = options || {};
-		this.document = options.document || globalThis.document;
-		this.registry = options.registry || (globalThis.CSS && CSS.highlights);
-		this.Highlight = options.Highlight || globalThis.Highlight;
-		this.prefix = options.prefix || 'lighthigh-' + (++nextId);
-		this.palette = Object.assign({}, defaultPalette, options.theme);
-		this.names = new Set();
-		this.style = null;
+/** Paint tokens without changing text nodes. Returns an idempotent cleanup. */
+function highlight(element, tokens, options) {
+	if (!element || element.nodeType !== 1) throw new TypeError('highlight(element, tokens) expects an element');
+	options = options || {};
+	var document = element.ownerDocument;
+	var view = document.defaultView || globalThis;
+	var registry = view.CSS && view.CSS.highlights;
+	if (!registry || !view.Highlight) throw new Error('Lighthigh requires the CSS Custom Highlight API');
 
-		if (!this.document || !this.registry || !this.Highlight) {
-			throw new Error('Lighthigh requires the CSS Custom Highlight API');
-		}
+	var text = element.textContent || '';
+	if (typeof tokens === 'function') tokens = tokens(text, options.language);
+	tokens = normalizeTokens(tokens, text.length);
+	var nodes = collectTextNodes(element, document);
+	var grouped = new Map();
+	for (var token of tokens) {
+		var range = rangeForOffsets(nodes, token.start, token.end, document);
+		if (!range) continue;
+		if (!grouped.has(token.type)) grouped.set(token.type, []);
+		grouped.get(token.type).push(range);
 	}
 
-	/** Highlight an element without replacing or wrapping its text nodes. */
-	highlight(element, lexer, language) {
-		if (!element || typeof lexer !== 'function') {
-			throw new TypeError('highlight(element, lexer) expects an element and a lexer function');
-		}
-
-		this.clear();
-		var text = element.textContent || '';
-		var output = lexer(text, language);
-		var tokens = normalizeTokens(output, text.length);
-		var textNodes = collectTextNodes(element, this.document);
-		var grouped = new Map();
-
-		tokens.forEach((token) => {
-			var range = rangeForOffsets(textNodes, token.start, token.end, this.document);
-			if (!range) return;
-			var type = safeName(token.type);
-			if (!grouped.has(type)) grouped.set(type, []);
-			grouped.get(type).push(range);
-		});
-
-		grouped.forEach((ranges, type) => {
-			var name = this.prefix + '-' + type;
-			this.registry.set(name, new this.Highlight(...ranges));
-			this.names.add(name);
-		});
-
-		this._setTheme(grouped.keys());
-		return this;
+	var prefix = 'lighthigh-' + (++nextId);
+	var palette = Object.assign({}, defaultPalette, options.theme);
+	var entries = [], css = [];
+	grouped.forEach((ranges, type) => {
+		var name = prefix + '-' + entries.length;
+		entries.push([name, new view.Highlight(...ranges)]);
+		css.push('::highlight(' + name + ') { color: ' + inferColor(type, palette) + '; }');
+	});
+	var style = css.length ? document.createElement('style') : null;
+	if (style) {
+		style.dataset.lighthigh = prefix;
+		style.textContent = css.join('\n');
 	}
 
-	clear() {
-		this.names.forEach((name) => this.registry.delete(name));
-		this.names.clear();
-		if (this.style) this.style.remove();
-		this.style = null;
-		return this;
-	}
+	// Prepare first: invalid tokens must not erase the current highlighting.
+	var previous = active.get(element);
+	if (previous) previous();
+	for (var [name, value] of entries) registry.set(name, value);
+	if (style) (document.head || document.documentElement).appendChild(style);
+	active.set(element, clear);
+	return clear;
 
-	dispose() {
-		return this.clear();
-	}
-
-	_setTheme(types) {
-		var css = [];
-		for (var type of types) {
-			var color = inferColor(type, this.palette);
-			css.push('::highlight(' + this.prefix + '-' + type + ') { color: ' + color + '; }');
-		}
-		if (!css.length) return;
-		this.style = this.document.createElement('style');
-		this.style.dataset.lighthigh = this.prefix;
-		this.style.textContent = css.join('\n');
-		(this.document.head || this.document.documentElement).appendChild(this.style);
+	function clear() {
+		for (var [name] of entries) registry.delete(name);
+		if (style) style.remove();
+		if (active.get(element) === clear) active.delete(element);
 	}
 }
 
@@ -89,6 +60,7 @@ function normalizeTokens(output, sourceLength) {
 	}
 
 	return Array.from(output, function (token) {
+		if (!token || typeof token !== 'object') throw new TypeError('Invalid token: expected an object or tuple');
 		var start = number(token.start, token.from, token.offset, token[0]);
 		var end = number(token.end, token.to, token[1]);
 		if (end === undefined && start !== undefined && token.length !== undefined) end = start + token.length;
@@ -117,17 +89,13 @@ function collectTextNodes(root, document) {
 }
 
 function rangeForOffsets(nodes, start, end, document) {
-	var first = nodes.find((entry) => start >= entry.start && start <= entry.end);
+	var first = nodes.find((entry) => start >= entry.start && start < entry.end);
 	var last = nodes.find((entry) => end > entry.start && end <= entry.end);
 	if (!first || !last) return null;
 	var range = document.createRange();
 	range.setStart(first.node, start - first.start);
 	range.setEnd(last.node, end - last.start);
 	return range;
-}
-
-function safeName(type) {
-	return type.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'plain';
 }
 
 var defaultPalette = {
@@ -147,13 +115,11 @@ var defaultPalette = {
 
 function inferColor(type, palette) {
 	var lower = type.toLowerCase();
-	if (palette[lower]) return palette[lower];
+	if (Object.hasOwn(palette, lower) && palette[lower]) return palette[lower];
 	var category = Object.keys(palette).find((key) => lower.includes(key));
 	if (category) return palette[category];
 	var hash = Array.from(lower).reduce((value, character) => ((value * 31) + character.charCodeAt(0)) >>> 0, 0);
 	return 'hsl(' + (hash % 360) + ' 55% 38%)';
 }
 
-module.exports = Lighthigh;
-module.exports.normalizeTokens = normalizeTokens;
-module.exports.inferColor = inferColor;
+module.exports = highlight;

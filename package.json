@@ -3,17 +3,51 @@
   "version": "1.0.0",
   "description": "Lexer-agnostic syntax highlighting with the CSS Custom Highlight API",
   "main": "index.js",
-  "files": ["index.js", "index.css", "README.md"],
+  "unpkg": "site/vendor/auto.min.js",
+  "jsdelivr": "site/vendor/auto.min.js",
+  "files": [
+    "index.js",
+    "index.css",
+    "adapters.js",
+    "themes.json",
+    "site/vendor/auto.min.js",
+    "site/vendor/NOTICE.txt",
+    "README.md"
+  ],
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "build:site": "node scripts/build-site.js",
+    "build:icons": "node scripts/build-icons.js",
+    "dev": "npm run build:site && node scripts/serve.js",
+    "test:site": "node scripts/check-site.js",
+    "prepublishOnly": "npm run build:site && npm test"
   },
-  "keywords": ["syntax", "highlight", "css-custom-highlight", "lexer", "gpu"],
+  "keywords": [
+    "syntax",
+    "highlight",
+    "syntax-highlighting",
+    "css-custom-highlight",
+    "highlight-api",
+    "prism",
+    "shiki",
+    "lexer"
+  ],
   "author": "dfcreative",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git://github.com/dfcreative/lighthigh.git"
+    "url": "git+https://github.com/dy/lighthigh.git"
   },
-  "bugs": {"url": "https://github.com/dfcreative/lighthigh/issues"},
-  "homepage": "https://github.com/dfcreative/lighthigh"
+  "bugs": {
+    "url": "https://github.com/dy/lighthigh/issues"
+  },
+  "homepage": "https://dy.github.io/lighthigh/",
+  "devDependencies": {
+    "@shikijs/themes": "^4.5.0",
+    "esbuild": "^0.25.12",
+    "playwright": "^1.63.0",
+    "prismjs": "^1.30.0",
+    "shiki": "^4.5.0",
+    "sprae": "^13.9.4"
+  }
 }
