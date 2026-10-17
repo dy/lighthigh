@@ -1,6 +1,6 @@
 {
   "name": "lighthigh",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Lexer-agnostic syntax highlighting with the CSS Custom Highlight API",
   "main": "index.js",
   "unpkg": "site/vendor/auto.min.js",
