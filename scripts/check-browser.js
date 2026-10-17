@@ -82,6 +82,24 @@ module.exports = async function checkBrowser(context, base, errors) {
     });
     const source = page.locator('[data-source]');
     const output = page.locator('[data-output]');
+    const sheets = () => page.evaluate(() => {
+      window.lighthighSheet ??= document.adoptedStyleSheets.find(sheet => [...sheet.cssRules].some(rule => rule.cssText.includes('::highlight(lighthigh-')));
+      const rules = [...window.lighthighSheet.cssRules].map(rule => rule.cssText);
+      return {
+        same: document.adoptedStyleSheets.includes(window.lighthighSheet), styles: document.querySelectorAll('style').length, rules: rules.length,
+        unstyled: [...CSS.highlights].filter(([name, group]) => name.startsWith('lighthigh-') && group.size && !rules.some(rule => rule.startsWith('::highlight(' + name + ')'))).map(([name]) => name)
+      };
+    });
+    const typed = '\nconst more = "typed" + 1 // live';
+    await source.focus();
+    await source.press('End');
+    await page.keyboard.type(typed);
+    const before = await sheets();
+    await page.keyboard.type(typed);
+    const after = await sheets();
+    assert(after.same && after.styles === before.styles, 'Typing repaints through one shared stylesheet, no <style> churn');
+    assert.equal(after.rules, before.rules, 'Typing known colors adds no rules');
+    assert.deepEqual(after.unstyled, [], 'Every painted highlight has its color rule');
     await source.fill('1');
     await source.press('End');
     await page.keyboard.insertText(' + 2');

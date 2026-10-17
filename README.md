@@ -67,15 +67,17 @@ Accepted token shapes include `{start, end, type}`, `{from, to, kind}`,
 Set `options.language` to pass a language to the callback. Await async lexers first.
 
 Calling `highlight(element, tokens, options)` again replaces that element’s
-ranges and stylesheet. Text nodes and markup stay intact. The returned cleanup
+ranges. All elements in a document share one adopted stylesheet with one named
+highlight per color, so a repaint only moves ranges; a CSS rule is added only
+when a new color appears. Text nodes and markup stay intact. The returned cleanup
 is safe to call repeatedly; an older cleanup won’t erase newer highlights.
 Pass `[]` to clear colors, or call the cleanup on unmount. Invalid tokens throw
 before replacing existing colors.
 
 No instance to create or retain. The renderer keeps per-element cleanup state
 in a WeakMap; native ranges live in the browser’s highlight registry. The
-renderer is 1.4 KB minified and gzipped, with no runtime dependencies. The
-script including 14 languages and 18 palettes is 23.3 KB gzipped.
+renderer is 1.6 KB minified and gzipped, with no runtime dependencies. The
+script including 14 languages and 18 palettes is 23.7 KB gzipped.
 
 ## Prism
 

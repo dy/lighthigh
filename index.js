@@ -1,7 +1,7 @@
 'use strict';
 
-var nextId = 0;
 var active = new WeakMap();
+var shared = new WeakMap();
 
 /** Paint tokens without changing text nodes. Returns an idempotent cleanup. */
 function highlight(element, tokens, options) {
@@ -24,33 +24,55 @@ function highlight(element, tokens, options) {
 		grouped.get(token.type).push(range);
 	}
 
-	var prefix = 'lighthigh-' + (++nextId);
-	var palette = Object.assign({}, defaultPalette, options.theme);
-	var entries = [], css = [];
-	grouped.forEach((ranges, type) => {
-		var name = prefix + '-' + entries.length;
-		entries.push([name, new view.Highlight(...ranges)]);
-		css.push('::highlight(' + name + ') { color: ' + inferColor(type, palette) + '; }');
-	});
-	var style = css.length ? document.createElement('style') : null;
-	if (style) {
-		style.dataset.lighthigh = prefix;
-		style.textContent = css.join('\n');
-	}
-
 	// Prepare first: invalid tokens must not erase the current highlighting.
+	var sheet = shared.get(document) || share(document, view, registry);
+	sheet.users++;
 	var previous = active.get(element);
 	if (previous) previous();
-	for (var [name, value] of entries) registry.set(name, value);
-	if (style) (document.head || document.documentElement).appendChild(style);
+	var palette = Object.assign({}, defaultPalette, options.theme);
+	var painted = [];
+	grouped.forEach((ranges, type) => {
+		var group = sheet.group(inferColor(type, palette));
+		for (var range of ranges) group.add(range);
+		painted.push([group, ranges]);
+	});
 	active.set(element, clear);
 	return clear;
 
 	function clear() {
-		for (var [name] of entries) registry.delete(name);
-		if (style) style.remove();
+		if (!painted) return;
+		for (var [group, ranges] of painted) for (var range of ranges) group.delete(range);
+		painted = null;
 		if (active.get(element) === clear) active.delete(element);
+		if (!--sheet.users) sheet.dispose();
 	}
+}
+
+// One adopted stylesheet and one named highlight per color, shared by every element
+// of a document: a repaint only moves ranges, and a rule is added only for a new color.
+function share(document, view, registry) {
+	var groups = new Map(), css = new view.CSSStyleSheet();
+	document.adoptedStyleSheets = document.adoptedStyleSheets.concat(css);
+	var sheet = {
+		users: 0,
+		group: function (color) {
+			if (groups.has(color)) return groups.get(color)[1];
+			var name, i = groups.size;
+			while (registry.has(name = 'lighthigh-' + i)) i++;
+			var group = new view.Highlight();
+			registry.set(name, group);
+			groups.set(color, [name, group]);
+			css.insertRule('::highlight(' + name + ') { color: ' + color + '; }', css.cssRules.length);
+			return group;
+		},
+		dispose: function () {
+			groups.forEach(([name, group]) => { if (registry.get(name) === group) registry.delete(name); });
+			document.adoptedStyleSheets = document.adoptedStyleSheets.filter((other) => other !== css);
+			shared.delete(document);
+		}
+	};
+	shared.set(document, sheet);
+	return sheet;
 }
 
 function normalizeTokens(output, sourceLength) {
